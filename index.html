@@ -253,10 +253,21 @@
 
             .plot-top {
                   display: grid;
-                  grid-template-columns: 1fr auto;
-                  gap: 14px;
-                  align-items: start;
+                  gap: 0.58rem;
                   margin-bottom: 0.82rem;
+            }
+
+            .plot-head {
+                  display: flex;
+                  align-items: flex-start;
+                  justify-content: space-between;
+                  gap: 14px;
+                  flex-wrap: wrap;
+            }
+
+            .plot-head h2 {
+                  margin-bottom: 0;
+                  flex: 1 1 420px;
             }
 
             h2 {
@@ -269,12 +280,11 @@
             .one-line {
                   color: var(--muted);
                   font-size: 0.96rem;
-                  max-width: 76ch;
+                  max-width: none;
             }
 
             .plot-link {
-                  justify-self: end;
-                  align-self: start;
+                  align-self: flex-start;
                   white-space: nowrap;
                   text-decoration: none;
                   color: var(--accent);
@@ -307,9 +317,10 @@
             }
 
             .viz-shell img {
-                  max-height: 560px;
+                  height: auto;
+                  max-height: none;
                   object-fit: contain;
-                  background: color-mix(in srgb, var(--bg) 85%, white 15%);
+                  background: transparent;
             }
 
             .viz-shell iframe {
@@ -329,6 +340,13 @@
                   border-radius: 14px;
                   background: color-mix(in srgb, var(--card) 88%, transparent);
                   padding: 1rem 1.06rem;
+                  transition: border-color 0.26s ease, transform 0.26s ease, box-shadow 0.26s ease;
+            }
+
+            .notes:hover {
+                  border-color: color-mix(in srgb, var(--accent) 66%, var(--line));
+                  transform: translateY(-3px);
+                  box-shadow: var(--glow);
             }
 
             .notes h3 {
@@ -377,12 +395,12 @@
                         padding-top: 3.9rem;
                   }
 
-                  .plot-top {
-                        grid-template-columns: 1fr;
+                  .plot-head {
+                        gap: 10px;
                   }
 
                   .plot-link {
-                        justify-self: start;
+                        align-self: flex-start;
                   }
 
                   .plot-card {
@@ -420,7 +438,7 @@
             <div class="topbar">
                   <div class="container topbar-inner">
                         <div class="meta">
-                              <span>San Francisco Crime Analysis Portfolio</span>
+                              <span>San Francisco Crime Analysis</span>
                               <span class="active-section" id="active-section">Introduction</span>
                         </div>
                         <div class="actions">
@@ -433,8 +451,7 @@
             </div>
 
             <header class="hero">
-                  <p class="eyebrow">Data Science Portfolio</p>
-                  <h1>SF Crime: Two Decades of Data</h1>
+                  <h1>San Francisco Crime: Two Decades of Data</h1>
                   <p class="intro">
                         This portfolio explores interactive temporal and geographic patterns in San Francisco crime, with attention to how offense timing changes across day and night and across districts. It also highlights how reporting-driven dynamics and policing focus can create feedback loops that shape what the data appears to show.
                   </p>
@@ -444,58 +461,56 @@
                   <section class="plot-grid" aria-label="Crime visualizations">
                         <article class="plot-card" id="pairwise" data-section="Pairwise Similarity">
                               <div class="plot-top">
-                                    <div>
+                                    <div class="plot-head">
                                           <h2>Pairwise Temporal Pattern Similarity</h2>
-                                          <p class="one-line">Embezzlement and Fraud show the most similar temporal behavior while Fraud and Prostitution show the most dissimilar day-vs-night reporting pattern.</p>
+                                          <a class="plot-link" href="images/pairwise_crime_counts.png" target="_blank" rel="noopener noreferrer">Open Image</a>
                                     </div>
-                                    <a class="plot-link" href="images/pairwise_crime_counts.svg" target="_blank" rel="noopener noreferrer">Open SVG</a>
+                                    <p class="one-line">Embezzlement and Fraud show the most similar temporal behavior while Fraud and Prostitution show the most dissimilar day-vs-night reporting pattern.</p>
                               </div>
                               <div class="viz-shell">
-                                    <img src="images/pairwise_crime_counts.svg" alt="Pairwise crime count similarity matrix for San Francisco crimes">
+                                    <img src="images/pairwise_crime_counts.png" alt="Pairwise crime count similarity matrix for San Francisco crimes">
                               </div>
                               <p class="detail">The Embezzlement vs Fraud pairing represents two report-driven crimes where added investigation into Fraud can naturally uncover more Embezzlement, illustrating a feedback loop in observed counts.</p>
                         </article>
 
                         <article class="plot-card" id="hourly" data-section="Hourly Patterns">
                               <div class="plot-top">
-                                    <div>
+                                    <div class="plot-head">
                                           <h2>Interactive Hourly Focus Crimes</h2>
-                                          <p class="one-line">This interactive chart lets you click legend categories to compare crime-type activity across the 24-hour cycle without clutter.</p>
+                                          <a class="plot-link" href="visualizations/crime_hourly_interactive.html" target="_blank" rel="noopener noreferrer">Open Interactive View</a>
                                     </div>
-                                    <a class="plot-link" href="visualizations/crime_hourly_interactive.html" target="_blank" rel="noopener noreferrer">Open Interactive View</a>
+                                    <p class="one-line">This interactive chart lets you click legend categories to compare crime-type activity across the 24-hour cycle without clutter.</p>
                               </div>
                               <div class="viz-shell">
                                     <iframe src="visualizations/crime_hourly_interactive.html" title="Interactive hourly crime pattern chart"></iframe>
                               </div>
-                              <p class="detail">Robbery, Prostitution, and Burglary peak at night, while Embezzlement, Forgery and Counterfeiting, Fraud, and Gambling peak in work hours; this view is clearer than week 2 exercise 3.1 because normalization, selective visibility, and hover readouts support precise side-by-side comparison.</p>
+                              <p class="detail">Robbery, Prostitution, and Burglary peak at night, while Embezzlement, Forgery and Counterfeiting, Fraud, and Gambling peak in work hours.</p>
                         </article>
 
                         <article class="plot-card" id="hotspots-early" data-section="Hotspots 2003-2011">
                               <div class="plot-top">
-                                    <div>
+                                    <div class="plot-head">
                                           <h2>Prostitution Hotspots 2003-2011</h2>
-                                          <p class="one-line">Early years show strong concentration in Mission and at the Tenderloin-Central intersection, followed by a visible decline by 2011.</p>
+                                          <a class="plot-link" href="visualizations/prostitution_hotspots_2003_2011.html" target="_blank" rel="noopener noreferrer">Open Heatmap</a>
                                     </div>
-                                    <a class="plot-link" href="visualizations/prostitution_hotspots_2003_2011.html" target="_blank" rel="noopener noreferrer">Open Heatmap</a>
+                                    <p class="one-line">Early years show strong concentration in Mission and at the Tenderloin-Central intersection.</p>
                               </div>
                               <div class="viz-shell">
                                     <iframe src="visualizations/prostitution_hotspots_2003_2011.html" title="Prostitution hotspots 2003 to 2011"></iframe>
                               </div>
-                              <p class="detail">At finer temporal resolution this crime is predominantly after 18:00 into early morning and more common on Tuesday through Thursday, with Tenderloin-Central fading as incidents increasingly shift toward Mission.</p>
                         </article>
 
                         <article class="plot-card" id="hotspots-recent" data-section="Hotspots 2016-2024">
                               <div class="plot-top">
-                                    <div>
+                                    <div class="plot-head">
                                           <h2>Prostitution Hotspots 2016-2024</h2>
-                                          <p class="one-line">Post-2011 and post-pandemic years keep lower report volumes, with activity still concentrated in Mission and stable nighttime timing.</p>
+                                          <a class="plot-link" href="visualizations/prostitution_hotspots_2016_2024.html" target="_blank" rel="noopener noreferrer">Open Heatmap</a>
                                     </div>
-                                    <a class="plot-link" href="visualizations/prostitution_hotspots_2016_2024.html" target="_blank" rel="noopener noreferrer">Open Heatmap</a>
+                                    <p class="one-line">Recent years followed a visible decline in report volumes, with activity still concentrated in the Mission district.</p>
                               </div>
                               <div class="viz-shell">
                                     <iframe src="visualizations/prostitution_hotspots_2016_2024.html" title="Prostitution hotspots 2016 to 2024"></iframe>
                               </div>
-                              <p class="detail">Because decline started well before 2020, the pattern suggests either policy change or real crime reduction; a weak colder-month preference appears, while nearest-intersection recording and removed missing-GPS points remain key data-quality limits.</p>
                         </article>
                   </section>
 
