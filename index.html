@@ -1,14 +1,579 @@
-> <!DOCTYPE html>
-> <html>
-> <head>
->     <title>My Data Viz Site</title>
-> </head>
-> <body>
->     <h1>Hello World!</h1>
->     <p>This site will soon contain interactive data visualizations about crime in San Francisco.</p>
-      <img src="images/pairwise_crime_counts.svg" alt="Pairwise crime counts in SF" style="max-width: 100%;">
-      <iframe src="visualizations/crime_hourly_interactive.html" width="100%" height="600" frameborder="0"></iframe>
-      <iframe src="visualizations/prostitution_hotspots_2003_2011.html" width="100%" height="600" frameborder="0"></iframe>
-      <iframe src="visualizations/prostitution_hotspots_2016_2024.html" width="100%" height="600" frameborder="0"></iframe>
-> </body>
-> </html>
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>SF Crime: Two Decades of Data</title>
+      <style>
+            @import url("https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap");
+
+            :root {
+                  --bg: #070b12;
+                  --bg-soft: #0e1522;
+                  --text: #eaf3ff;
+                  --muted: #a2b7cf;
+                  --card: rgba(12, 21, 34, 0.78);
+                  --line: rgba(125, 169, 213, 0.26);
+                  --accent: #00e8c8;
+                  --accent-2: #18a0ff;
+                  --accent-3: #ff4da3;
+                  --shadow: 0 18px 45px rgba(0, 0, 0, 0.32);
+                  --glow: 0 0 0 1px rgba(0, 232, 200, 0.2), 0 12px 30px rgba(0, 232, 200, 0.14);
+            }
+
+            html[data-theme="light"] {
+                  --bg: #f4f8fd;
+                  --bg-soft: #e8eff8;
+                  --text: #0c1828;
+                  --muted: #415a74;
+                  --card: rgba(255, 255, 255, 0.9);
+                  --line: rgba(30, 85, 150, 0.2);
+                  --accent: #0068f5;
+                  --accent-2: #00b3a4;
+                  --accent-3: #ce146c;
+                  --shadow: 0 16px 36px rgba(15, 42, 76, 0.12);
+                  --glow: 0 0 0 1px rgba(0, 104, 245, 0.25), 0 8px 24px rgba(0, 104, 245, 0.14);
+            }
+
+            * {
+                  box-sizing: border-box;
+                  margin: 0;
+                  padding: 0;
+            }
+
+            html,
+            body {
+                  scroll-behavior: smooth;
+            }
+
+            body {
+                  font-family: "Public Sans", "Segoe UI", sans-serif;
+                  background:
+                        radial-gradient(circle at 15% -5%, rgba(0, 232, 200, 0.16), transparent 38%),
+                        radial-gradient(circle at 82% 6%, rgba(24, 160, 255, 0.17), transparent 42%),
+                        linear-gradient(170deg, var(--bg) 0%, var(--bg-soft) 100%);
+                  color: var(--text);
+                  min-height: 100vh;
+                  line-height: 1.6;
+                  overflow-x: hidden;
+            }
+
+            body::before,
+            body::after {
+                  content: "";
+                  position: fixed;
+                  width: 46vmax;
+                  height: 46vmax;
+                  border-radius: 50%;
+                  filter: blur(70px);
+                  opacity: 0.22;
+                  pointer-events: none;
+                  z-index: 0;
+                  animation: drift 20s ease-in-out infinite alternate;
+            }
+
+            body::before {
+                  background: var(--accent-2);
+                  top: -26vmax;
+                  right: -16vmax;
+            }
+
+            body::after {
+                  background: var(--accent-3);
+                  bottom: -30vmax;
+                  left: -18vmax;
+                  animation-delay: 1.2s;
+            }
+
+            @keyframes drift {
+                  from {
+                        transform: translate3d(0, 0, 0) scale(1);
+                  }
+                  to {
+                        transform: translate3d(0, 32px, 0) scale(1.07);
+                  }
+            }
+
+            .scroll-progress {
+                  position: fixed;
+                  top: 0;
+                  left: 0;
+                  width: 100%;
+                  height: 3px;
+                  z-index: 20;
+                  background: rgba(255, 255, 255, 0.06);
+            }
+
+            .scroll-progress .bar {
+                  display: block;
+                  height: 100%;
+                  width: 100%;
+                  transform: scaleX(0);
+                  transform-origin: left center;
+                  background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3));
+                  transition: transform 0.12s linear;
+            }
+
+            .shell {
+                  position: relative;
+                  z-index: 1;
+            }
+
+            .container {
+                  width: min(1120px, 92vw);
+                  margin: 0 auto;
+            }
+
+            .topbar {
+                  position: sticky;
+                  top: 0;
+                  z-index: 15;
+                  backdrop-filter: blur(10px);
+                  background: color-mix(in srgb, var(--bg-soft) 76%, transparent);
+                  border-bottom: 1px solid var(--line);
+            }
+
+            .topbar-inner {
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  gap: 14px;
+                  min-height: 66px;
+            }
+
+            .meta {
+                  display: flex;
+                  flex-direction: column;
+                  gap: 2px;
+                  font-size: 0.82rem;
+                  color: var(--muted);
+                  letter-spacing: 0.02em;
+                  text-transform: uppercase;
+            }
+
+            .meta .active-section {
+                  color: var(--text);
+                  font-size: 0.94rem;
+                  text-transform: none;
+                  letter-spacing: 0;
+                  font-weight: 600;
+            }
+
+            .actions {
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+            }
+
+            .scroll-percent {
+                  font-weight: 600;
+                  color: var(--muted);
+                  font-size: 0.88rem;
+                  min-width: 44px;
+                  text-align: right;
+            }
+
+            .theme-toggle {
+                  border: 1px solid var(--line);
+                  background: color-mix(in srgb, var(--bg) 88%, transparent);
+                  color: var(--text);
+                  font-family: inherit;
+                  font-weight: 600;
+                  border-radius: 999px;
+                  padding: 0.52rem 0.95rem;
+                  cursor: pointer;
+                  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+            }
+
+            .theme-toggle:hover {
+                  transform: translateY(-1px);
+                  border-color: color-mix(in srgb, var(--accent) 58%, var(--line));
+                  box-shadow: var(--glow);
+            }
+
+            .hero {
+                  width: min(1120px, 92vw);
+                  margin: 0 auto;
+                  padding: 4.8rem 0 2.5rem;
+            }
+
+            .eyebrow {
+                  font-size: 0.86rem;
+                  letter-spacing: 0.19em;
+                  color: var(--accent);
+                  text-transform: uppercase;
+                  margin-bottom: 0.95rem;
+                  font-weight: 700;
+            }
+
+            h1 {
+                  font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+                  font-size: clamp(2rem, 6vw, 4.25rem);
+                  line-height: 1.03;
+                  letter-spacing: 0.015em;
+                  max-width: 18ch;
+                  text-wrap: balance;
+                  margin-bottom: 1.08rem;
+            }
+
+            .intro {
+                  max-width: 74ch;
+                  color: var(--muted);
+                  font-size: clamp(1rem, 2.1vw, 1.17rem);
+            }
+
+            .plot-grid {
+                  display: grid;
+                  gap: 1.35rem;
+                  padding-bottom: 2.25rem;
+            }
+
+            .plot-card {
+                  background: var(--card);
+                  border: 1px solid var(--line);
+                  border-radius: 20px;
+                  padding: 1.25rem;
+                  box-shadow: var(--shadow);
+                  backdrop-filter: blur(8px);
+                  transition: border-color 0.26s ease, transform 0.26s ease, box-shadow 0.26s ease;
+                  opacity: 0;
+                  transform: translateY(24px);
+            }
+
+            .plot-card.in-view {
+                  opacity: 1;
+                  transform: translateY(0);
+            }
+
+            .plot-card:hover {
+                  border-color: color-mix(in srgb, var(--accent) 66%, var(--line));
+                  transform: translateY(-3px);
+                  box-shadow: var(--glow);
+            }
+
+            .plot-top {
+                  display: grid;
+                  grid-template-columns: 1fr auto;
+                  gap: 14px;
+                  align-items: start;
+                  margin-bottom: 0.82rem;
+            }
+
+            h2 {
+                  font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+                  font-size: clamp(1.14rem, 2.7vw, 1.7rem);
+                  line-height: 1.2;
+                  margin-bottom: 0.42rem;
+            }
+
+            .one-line {
+                  color: var(--muted);
+                  font-size: 0.96rem;
+                  max-width: 76ch;
+            }
+
+            .plot-link {
+                  justify-self: end;
+                  align-self: start;
+                  white-space: nowrap;
+                  text-decoration: none;
+                  color: var(--accent);
+                  font-weight: 700;
+                  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--line));
+                  border-radius: 999px;
+                  padding: 0.45rem 0.75rem;
+                  transition: transform 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease;
+            }
+
+            .plot-link:hover {
+                  transform: translateY(-1px);
+                  background: color-mix(in srgb, var(--accent) 14%, transparent);
+                  box-shadow: var(--glow);
+            }
+
+            .viz-shell {
+                  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+                  border-radius: 14px;
+                  background: color-mix(in srgb, var(--bg-soft) 80%, transparent);
+                  overflow: hidden;
+                  margin-bottom: 0.82rem;
+            }
+
+            .viz-shell img,
+            .viz-shell iframe {
+                  display: block;
+                  width: 100%;
+                  border: 0;
+            }
+
+            .viz-shell img {
+                  max-height: 560px;
+                  object-fit: contain;
+                  background: color-mix(in srgb, var(--bg) 85%, white 15%);
+            }
+
+            .viz-shell iframe {
+                  height: clamp(320px, 64vw, 620px);
+                  background: color-mix(in srgb, var(--bg) 74%, white 26%);
+            }
+
+            .detail {
+                  font-size: 0.93rem;
+                  color: color-mix(in srgb, var(--text) 88%, var(--muted));
+            }
+
+            .notes {
+                  margin-top: 0.6rem;
+                  margin-bottom: 2.6rem;
+                  border: 1px solid var(--line);
+                  border-radius: 14px;
+                  background: color-mix(in srgb, var(--card) 88%, transparent);
+                  padding: 1rem 1.06rem;
+            }
+
+            .notes h3 {
+                  font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+                  font-size: 1rem;
+                  margin-bottom: 0.28rem;
+            }
+
+            .notes p {
+                  font-size: 0.9rem;
+                  color: var(--muted);
+            }
+
+            footer {
+                  border-top: 1px solid var(--line);
+                  margin-top: 1rem;
+                  padding: 1.3rem 0 2.4rem;
+                  color: var(--muted);
+                  font-size: 0.88rem;
+            }
+
+            @media (max-width: 760px) {
+                  .topbar-inner {
+                        min-height: 56px;
+                        gap: 8px;
+                  }
+
+                  .meta {
+                        font-size: 0.76rem;
+                  }
+
+                  .meta .active-section {
+                        font-size: 0.88rem;
+                  }
+
+                  .actions {
+                        gap: 8px;
+                  }
+
+                  .theme-toggle {
+                        padding: 0.42rem 0.76rem;
+                        font-size: 0.86rem;
+                  }
+
+                  .hero {
+                        padding-top: 3.9rem;
+                  }
+
+                  .plot-top {
+                        grid-template-columns: 1fr;
+                  }
+
+                  .plot-link {
+                        justify-self: start;
+                  }
+
+                  .plot-card {
+                        padding: 1rem;
+                        border-radius: 16px;
+                  }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                  *,
+                  *::before,
+                  *::after {
+                        animation: none !important;
+                        transition: none !important;
+                  }
+
+                  html,
+                  body {
+                        scroll-behavior: auto;
+                  }
+
+                  .plot-card {
+                        opacity: 1;
+                        transform: none;
+                  }
+            }
+      </style>
+</head>
+<body>
+      <div class="scroll-progress" aria-hidden="true">
+            <span class="bar" id="scroll-bar"></span>
+      </div>
+
+      <div class="shell">
+            <div class="topbar">
+                  <div class="container topbar-inner">
+                        <div class="meta">
+                              <span>San Francisco Crime Analysis Portfolio</span>
+                              <span class="active-section" id="active-section">Introduction</span>
+                        </div>
+                        <div class="actions">
+                              <span class="scroll-percent" id="scroll-percent">0%</span>
+                              <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle dark and light mode">
+                                    Switch to Light
+                              </button>
+                        </div>
+                  </div>
+            </div>
+
+            <header class="hero">
+                  <p class="eyebrow">Data Science Portfolio</p>
+                  <h1>SF Crime: Two Decades of Data</h1>
+                  <p class="intro">
+                        This portfolio explores interactive temporal and geographic patterns in San Francisco crime, with attention to how offense timing changes across day and night and across districts. It also highlights how reporting-driven dynamics and policing focus can create feedback loops that shape what the data appears to show.
+                  </p>
+            </header>
+
+            <main class="container">
+                  <section class="plot-grid" aria-label="Crime visualizations">
+                        <article class="plot-card" id="pairwise" data-section="Pairwise Similarity">
+                              <div class="plot-top">
+                                    <div>
+                                          <h2>Pairwise Temporal Pattern Similarity</h2>
+                                          <p class="one-line">Embezzlement and Fraud show the most similar temporal behavior while Fraud and Prostitution show the most dissimilar day-vs-night reporting pattern.</p>
+                                    </div>
+                                    <a class="plot-link" href="images/pairwise_crime_counts.svg" target="_blank" rel="noopener noreferrer">Open SVG</a>
+                              </div>
+                              <div class="viz-shell">
+                                    <img src="images/pairwise_crime_counts.svg" alt="Pairwise crime count similarity matrix for San Francisco crimes">
+                              </div>
+                              <p class="detail">The Embezzlement vs Fraud pairing represents two report-driven crimes where added investigation into Fraud can naturally uncover more Embezzlement, illustrating a feedback loop in observed counts.</p>
+                        </article>
+
+                        <article class="plot-card" id="hourly" data-section="Hourly Patterns">
+                              <div class="plot-top">
+                                    <div>
+                                          <h2>Interactive Hourly Focus Crimes</h2>
+                                          <p class="one-line">This interactive chart lets you click legend categories to compare crime-type activity across the 24-hour cycle without clutter.</p>
+                                    </div>
+                                    <a class="plot-link" href="visualizations/crime_hourly_interactive.html" target="_blank" rel="noopener noreferrer">Open Interactive View</a>
+                              </div>
+                              <div class="viz-shell">
+                                    <iframe src="visualizations/crime_hourly_interactive.html" title="Interactive hourly crime pattern chart"></iframe>
+                              </div>
+                              <p class="detail">Robbery, Prostitution, and Burglary peak at night, while Embezzlement, Forgery and Counterfeiting, Fraud, and Gambling peak in work hours; this view is clearer than week 2 exercise 3.1 because normalization, selective visibility, and hover readouts support precise side-by-side comparison.</p>
+                        </article>
+
+                        <article class="plot-card" id="hotspots-early" data-section="Hotspots 2003-2011">
+                              <div class="plot-top">
+                                    <div>
+                                          <h2>Prostitution Hotspots 2003-2011</h2>
+                                          <p class="one-line">Early years show strong concentration in Mission and at the Tenderloin-Central intersection, followed by a visible decline by 2011.</p>
+                                    </div>
+                                    <a class="plot-link" href="visualizations/prostitution_hotspots_2003_2011.html" target="_blank" rel="noopener noreferrer">Open Heatmap</a>
+                              </div>
+                              <div class="viz-shell">
+                                    <iframe src="visualizations/prostitution_hotspots_2003_2011.html" title="Prostitution hotspots 2003 to 2011"></iframe>
+                              </div>
+                              <p class="detail">At finer temporal resolution this crime is predominantly after 18:00 into early morning and more common on Tuesday through Thursday, with Tenderloin-Central fading as incidents increasingly shift toward Mission.</p>
+                        </article>
+
+                        <article class="plot-card" id="hotspots-recent" data-section="Hotspots 2016-2024">
+                              <div class="plot-top">
+                                    <div>
+                                          <h2>Prostitution Hotspots 2016-2024</h2>
+                                          <p class="one-line">Post-2011 and post-pandemic years keep lower report volumes, with activity still concentrated in Mission and stable nighttime timing.</p>
+                                    </div>
+                                    <a class="plot-link" href="visualizations/prostitution_hotspots_2016_2024.html" target="_blank" rel="noopener noreferrer">Open Heatmap</a>
+                              </div>
+                              <div class="viz-shell">
+                                    <iframe src="visualizations/prostitution_hotspots_2016_2024.html" title="Prostitution hotspots 2016 to 2024"></iframe>
+                              </div>
+                              <p class="detail">Because decline started well before 2020, the pattern suggests either policy change or real crime reduction; a weak colder-month preference appears, while nearest-intersection recording and removed missing-GPS points remain key data-quality limits.</p>
+                        </article>
+                  </section>
+
+                  <section class="notes" aria-label="Method and bias notes">
+                        <h3>Method and Feedback-Loop Note</h3>
+                        <p>If police redeploy officers using these hotspot outputs, reported incidents in targeted areas can increase because data collection intensifies where police look, linking directly to the dirty-data feedback-loop risk and potentially reducing attention elsewhere.</p>
+                  </section>
+            </main>
+
+            <footer>
+                  <div class="container">
+                        All these plots were created for the class "Social data analysis and visualization" 02806 at DTU. More plots and insights can be viewed on my <a href="https://github.com/Jacopo00811/socialdata2026" style="color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent);">GitHub repository</a>.
+                  </div>
+            </footer>
+      </div>
+
+      <script>
+            (function () {
+                  var root = document.documentElement;
+                  var toggle = document.getElementById("theme-toggle");
+                  var scrollBar = document.getElementById("scroll-bar");
+                  var scrollPercent = document.getElementById("scroll-percent");
+                  var activeSection = document.getElementById("active-section");
+                  var cards = Array.prototype.slice.call(document.querySelectorAll(".plot-card"));
+                  var themeKey = "sf-crime-theme";
+
+                  function setTheme(theme) {
+                        root.setAttribute("data-theme", theme);
+                        toggle.textContent = theme === "dark" ? "Switch to Light" : "Switch to Dark";
+                        toggle.setAttribute("aria-pressed", theme !== "dark" ? "true" : "false");
+                        window.localStorage.setItem(themeKey, theme);
+                  }
+
+                  var storedTheme = window.localStorage.getItem(themeKey);
+                  if (storedTheme === "light" || storedTheme === "dark") {
+                        setTheme(storedTheme);
+                  } else {
+                        setTheme("dark");
+                  }
+
+                  toggle.addEventListener("click", function () {
+                        var current = root.getAttribute("data-theme");
+                        setTheme(current === "dark" ? "light" : "dark");
+                  });
+
+                  function updateScrollProgress() {
+                        var maxScrollable = document.documentElement.scrollHeight - window.innerHeight;
+                        var ratio = maxScrollable > 0 ? Math.min(1, Math.max(0, window.scrollY / maxScrollable)) : 0;
+                        scrollBar.style.transform = "scaleX(" + ratio + ")";
+                        scrollPercent.textContent = Math.round(ratio * 100) + "%";
+                  }
+
+                  window.addEventListener("scroll", updateScrollProgress, { passive: true });
+                  window.addEventListener("resize", updateScrollProgress);
+                  updateScrollProgress();
+
+                  if ("IntersectionObserver" in window) {
+                        var observer = new IntersectionObserver(function (entries) {
+                              entries.forEach(function (entry) {
+                                    if (entry.isIntersecting) {
+                                          entry.target.classList.add("in-view");
+                                          activeSection.textContent = entry.target.getAttribute("data-section") || "Portfolio";
+                                    }
+                              });
+                        }, {
+                              threshold: 0.35,
+                              rootMargin: "0px 0px -8% 0px"
+                        });
+
+                        cards.forEach(function (card) {
+                              observer.observe(card);
+                        });
+                  } else {
+                        cards.forEach(function (card) {
+                              card.classList.add("in-view");
+                        });
+                  }
+            })();
+      </script>
+</body>
+</html>
